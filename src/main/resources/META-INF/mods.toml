@@ -4,7 +4,7 @@ license="All Rights Reserved"
 
 [[mods]]
 modId="gulp"
-version="0.1.0"
+version="${mod_version}"
 displayName="Vore Mod"
 logoFile="logo.png"
 logoBlur=false

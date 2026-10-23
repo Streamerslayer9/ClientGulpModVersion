@@ -1,51 +1,35 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  net.minecraft.client.Minecraft
- *  net.minecraft.client.resources.sounds.SoundInstance
- */
 package com.example.gulp;
 
-import com.example.gulp.GulpConfig;
-import com.example.gulp.GulpSound;
-import com.example.gulp.ScreenLoopSound;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.sounds.SoundInstance;
 
+/** Starts/stops the stomach-screen loop. Screens call start() when they open; Settings calls refresh(). */
 public final class ScreenLoop {
     private static ScreenLoopSound current;
 
-    private ScreenLoop() {
-    }
+    private ScreenLoop() { }
 
     private static boolean enabled() {
         return GulpConfig.useCustomSounds && GulpConfig.isOn(GulpSound.SCREEN_LOOP);
     }
 
     public static void start() {
-        if (!ScreenLoop.enabled()) {
-            return;
-        }
-        if (current == null || current.m_7801_()) {
+        if (!enabled()) return;
+        if (current == null || current.isStopped()) {
             current = new ScreenLoopSound();
-            Minecraft.m_91087_().m_91106_().m_120367_((SoundInstance)current);
+            Minecraft.getInstance().getSoundManager().play(current);
         }
     }
 
     public static void stop() {
         if (current != null) {
-            Minecraft.m_91087_().m_91106_().m_120399_((SoundInstance)current);
+            Minecraft.getInstance().getSoundManager().stop(current);
             current = null;
         }
     }
 
+    /** Call after a sound setting changes while a Gulp screen is open. */
     public static void refresh() {
-        if (ScreenLoop.enabled()) {
-            ScreenLoop.start();
-        } else {
-            ScreenLoop.stop();
-        }
+        if (enabled()) start();
+        else stop();
     }
 }
-

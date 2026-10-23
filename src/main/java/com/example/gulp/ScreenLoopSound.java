@@ -1,60 +1,45 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  net.minecraft.client.Minecraft
- *  net.minecraft.client.gui.screens.Screen
- *  net.minecraft.client.resources.sounds.AbstractTickableSoundInstance
- *  net.minecraft.client.resources.sounds.SoundInstance
- *  net.minecraft.client.resources.sounds.SoundInstance$Attenuation
- *  net.minecraft.sounds.SoundEvent
- *  net.minecraft.sounds.SoundSource
- */
 package com.example.gulp;
 
-import com.example.gulp.Gulp;
-import com.example.gulp.GulpConfig;
-import com.example.gulp.GulpSound;
-import com.example.gulp.PerkTreeScreen;
-import com.example.gulp.PerksScreen;
-import com.example.gulp.SettingsScreen;
-import com.example.gulp.SoundsScreen;
-import com.example.gulp.StomachScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 
-public class ScreenLoopSound
-extends AbstractTickableSoundInstance {
+/** The looping stomach-screen music. Stops by itself as soon as none of the Gulp screens is open. */
+public class ScreenLoopSound extends AbstractTickableSoundInstance {
+    /**
+     * The loop's volume at 100% in Settings (0.0 - 1.0). Kept low so it sits in the background as ambience.
+     * The Settings slider scales this from 0% to 200% (so at most twice this value).
+     */
     private static final float BASE_VOLUME = 0.25f;
 
     public ScreenLoopSound() {
-        super((SoundEvent)Gulp.SCREEN_LOOP.get(), SoundSource.PLAYERS, SoundInstance.m_235150_());
-        this.f_119578_ = true;
-        this.f_119579_ = 0;
-        this.f_119573_ = ScreenLoopSound.currentVolume();
-        this.f_119582_ = true;
-        this.f_119580_ = SoundInstance.Attenuation.NONE;
+        super(Gulp.SCREEN_LOOP.get(), SoundSource.PLAYERS, SoundInstance.createUnseededRandom());
+        this.looping = true;
+        this.delay = 0;
+        this.volume = currentVolume();
+        this.relative = true;                         // plays flat in your ears, not from a spot in the world
+        this.attenuation = SoundInstance.Attenuation.NONE;
     }
 
     private static float currentVolume() {
-        return Math.min(1.0f, 0.25f * GulpConfig.volume(GulpSound.SCREEN_LOOP));
+        return Math.min(1f, BASE_VOLUME * GulpConfig.volume(GulpSound.SCREEN_LOOP));
     }
 
-    public boolean m_7784_() {
+    /** Lets the loop exist while the slider is at 0%, so dragging it back up brings the music back. */
+    @Override
+    public boolean canStartSilent() {
         return true;
     }
 
-    public void m_7788_() {
-        Screen screen = Minecraft.m_91087_().f_91080_;
-        if (!(screen instanceof StomachScreen || screen instanceof PerksScreen || screen instanceof PerkTreeScreen || screen instanceof SettingsScreen || screen instanceof SoundsScreen)) {
-            this.m_119609_();
+    @Override
+    public void tick() {
+        Object screen = Minecraft.getInstance().screen;
+        if (!(screen instanceof StomachScreen || screen instanceof PerksScreen || screen instanceof PerkTreeScreen
+                || screen instanceof SettingsScreen || screen instanceof SoundsScreen)) {
+            stop();
             return;
         }
-        this.f_119573_ = ScreenLoopSound.currentVolume();
+        this.volume = currentVolume(); // follows the slider live
     }
 }
-

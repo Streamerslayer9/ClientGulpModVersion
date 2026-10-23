@@ -1,107 +1,99 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  net.minecraft.client.gui.GuiGraphics
- *  net.minecraft.client.gui.components.Button
- *  net.minecraft.client.gui.components.events.GuiEventListener
- *  net.minecraft.client.gui.screens.Screen
- *  net.minecraft.network.chat.Component
- */
 package com.example.gulp;
 
-import com.example.gulp.GulpConfig;
-import com.example.gulp.GulpSound;
-import com.example.gulp.ScreenLoop;
-import com.example.gulp.SettingsScreen;
-import com.example.gulp.VolumeSlider;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-public class SoundsScreen
-extends Screen {
+/** Sound settings: custom/Minecraft sound set, plus an ON/OFF button and a 0-200% volume slider for each sound. */
+public class SoundsScreen extends Screen {
     private static final int W = 250;
     private static final int H = 206;
+
     private Button setButton;
     private final Button[] toggles = new Button[GulpSound.values().length];
     private final VolumeSlider[] sliders = new VolumeSlider[GulpSound.values().length];
 
     public SoundsScreen() {
-        super((Component)Component.m_237113_((String)"Gulp Sounds"));
+        super(Component.literal("Gulp Sounds"));
     }
 
-    private int left() {
-        return (this.f_96543_ - 250) / 2;
-    }
+    private int left() { return (width - W) / 2; }
+    private int top() { return (height - H) / 2; }
 
-    private int top() {
-        return (this.f_96544_ - 206) / 2;
-    }
-
+    /** Updates labels and greys out whatever doesn't apply right now. */
     private void refresh() {
-        this.setButton.m_93666_((Component)Component.m_237113_((String)("Sounds: " + (GulpConfig.useCustomSounds ? "Custom" : "Minecraft"))));
+        setButton.setMessage(Component.literal("Sounds: " + (GulpConfig.useCustomSounds ? "Custom" : "Minecraft")));
         for (GulpSound sound : GulpSound.values()) {
             int i = sound.ordinal();
+            // The screen music only exists in the custom sound set.
             boolean available = sound != GulpSound.SCREEN_LOOP || GulpConfig.useCustomSounds;
-            this.toggles[i].m_93666_((Component)Component.m_237113_((String)(GulpConfig.isOn(sound) ? "ON" : "OFF")));
-            this.toggles[i].f_93623_ = available;
-            this.sliders[i].f_93623_ = available && GulpConfig.isOn(sound);
+            toggles[i].setMessage(Component.literal(GulpConfig.isOn(sound) ? "ON" : "OFF"));
+            toggles[i].active = available;
+            sliders[i].active = available && GulpConfig.isOn(sound);
         }
     }
 
-    protected void m_7856_() {
+    @Override
+    protected void init() {
         ScreenLoop.start();
-        int x = this.left();
-        int y = this.top();
-        this.setButton = Button.m_253074_((Component)Component.m_237119_(), btn -> {
+        int x = left();
+        int y = top();
+
+        setButton = Button.builder(Component.empty(), btn -> {
             GulpConfig.useCustomSounds = !GulpConfig.useCustomSounds;
             GulpConfig.save();
             ScreenLoop.refresh();
-            this.refresh();
-        }).m_252987_(x + 15, y + 22, 220, 20).m_253136_();
-        this.m_142416_((GuiEventListener)this.setButton);
+            refresh();
+        }).bounds(x + 15, y + 22, W - 30, 20).build();
+        addRenderableWidget(setButton);
+
         for (GulpSound sound : GulpSound.values()) {
             int i = sound.ordinal();
             int ry = y + 50 + i * 24;
-            this.toggles[i] = Button.m_253074_((Component)Component.m_237119_(), btn -> {
+            toggles[i] = Button.builder(Component.empty(), btn -> {
                 GulpConfig.setOn(sound, !GulpConfig.isOn(sound));
                 GulpConfig.save();
-                if (sound == GulpSound.SCREEN_LOOP) {
-                    ScreenLoop.refresh();
-                }
-                this.refresh();
-            }).m_252987_(x + 15, ry, 40, 20).m_253136_();
-            this.sliders[i] = new VolumeSlider(x + 59, ry, 176, 20, sound);
-            this.m_142416_((GuiEventListener)this.toggles[i]);
-            this.m_142416_((GuiEventListener)this.sliders[i]);
+                if (sound == GulpSound.SCREEN_LOOP) ScreenLoop.refresh();
+                refresh();
+            }).bounds(x + 15, ry, 40, 20).build();
+            sliders[i] = new VolumeSlider(x + 59, ry, W - 30 - 44, 20, sound);
+            addRenderableWidget(toggles[i]);
+            addRenderableWidget(sliders[i]);
         }
-        this.m_142416_((GuiEventListener)Button.m_253074_((Component)Component.m_237113_((String)"Back"), btn -> this.f_96541_.m_91152_((Screen)new SettingsScreen())).m_252987_(x + 8, y + 206 - 28, 60, 20).m_253136_());
-        this.m_142416_((GuiEventListener)Button.m_253074_((Component)Component.m_237113_((String)"Close"), btn -> this.m_7379_()).m_252987_(x + 250 - 68, y + 206 - 28, 60, 20).m_253136_());
-        this.refresh();
+
+        addRenderableWidget(Button.builder(Component.literal("Back"), btn -> this.minecraft.setScreen(new SettingsScreen()))
+                .bounds(x + 8, y + H - 28, 60, 20).build());
+        addRenderableWidget(Button.builder(Component.literal("Close"), btn -> onClose())
+                .bounds(x + W - 68, y + H - 28, 60, 20).build());
+
+        refresh();
     }
 
-    public void m_7861_() {
+    @Override
+    public void removed() {
         GulpConfig.save();
     }
 
-    public boolean m_7043_() {
+    @Override
+    public boolean isPauseScreen() {
         return false;
     }
 
-    public void m_88315_(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.m_280273_(g);
-        int x = this.left();
-        int y = this.top();
-        g.m_280509_(x, y, x + 250, y + 206, -434891756);
-        g.m_280509_(x, y, x + 250, y + 1, -10066330);
-        g.m_280509_(x, y + 206 - 1, x + 250, y + 206, -10066330);
-        g.m_280509_(x, y, x + 1, y + 206, -10066330);
-        g.m_280509_(x + 250 - 1, y, x + 250, y + 206, -10066330);
-        g.m_280056_(this.f_96547_, "Sounds", x + 8, y + 8, 0xFFFFFF, true);
-        super.m_88315_(g, mouseX, mouseY, partialTick);
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        renderBackground(g);
+        int x = left();
+        int y = top();
+
+        g.fill(x, y, x + W, y + H, 0xE6141414);
+        g.fill(x, y, x + W, y + 1, 0xFF666666);
+        g.fill(x, y + H - 1, x + W, y + H, 0xFF666666);
+        g.fill(x, y, x + 1, y + H, 0xFF666666);
+        g.fill(x + W - 1, y, x + W, y + H, 0xFF666666);
+
+        g.drawString(font, "Sounds", x + 8, y + 8, 0xFFFFFF, true);
+
+        super.render(g, mouseX, mouseY, partialTick);
     }
 }
-

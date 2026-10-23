@@ -1,19 +1,13 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  net.minecraft.network.FriendlyByteBuf
- *  net.minecraft.server.level.ServerPlayer
- *  net.minecraftforge.network.NetworkEvent$Context
- */
 package com.example.gulp;
 
-import com.example.gulp.StomachLogic;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.function.Supplier;
+
+/** 0 swallow | 1 toggle mode | 2 release last | 3 release all
+ *  4 release entry (arg = uid) | 5 digest entry now (arg = uid) | 6 buy perk (arg = perk index) */
 public class ActionPacket {
     private final int action;
     private final int arg;
@@ -39,4 +33,3 @@ public class ActionPacket {
         c.setPacketHandled(true);
     }
 }
-

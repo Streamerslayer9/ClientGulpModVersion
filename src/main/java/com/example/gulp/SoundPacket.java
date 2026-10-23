@@ -1,22 +1,17 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  net.minecraft.network.FriendlyByteBuf
- *  net.minecraftforge.network.NetworkEvent$Context
- */
 package com.example.gulp;
 
-import com.example.gulp.ClientState;
-import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.function.Supplier;
+
+/**
+ * Server -> client: "play this Gulp sound here". The CLIENT picks which sound to actually play
+ * (custom or Minecraft) and whether it is switched on, based on that player's Settings.
+ */
 public class SoundPacket {
     private final int type;
-    private final double x;
-    private final double y;
-    private final double z;
+    private final double x, y, z;
 
     public SoundPacket(int type, double x, double y, double z) {
         this.type = type;
@@ -42,4 +37,3 @@ public class SoundPacket {
         c.setPacketHandled(true);
     }
 }
-
