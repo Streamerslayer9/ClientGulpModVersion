@@ -61,27 +61,41 @@ public final class CpmDriver {
         RESOLVED.clear();
     }
 
-    /** Called every client tick. */
+    /**
+     * Called every client tick.
+     *
+     * Sliders ON:  the model's belly animations follow how full you are.
+     * Sliders OFF: the model's belly animations are held at 0, so the CPM belly stays completely flat no matter how
+     *              much you eat or swallow. The model is still detected, so the built-in skin belly stays hidden too
+     *              (otherwise it would pop up next to the model's own belly).
+     */
     public static void tick() {
-        if (!GulpConfig.cpmSliders || !CpmBridge.available()) {
+        if (!CpmBridge.available()) {
             localModelHasBelly = false;
             report();
             return;
         }
         if (++ticks % 2 != 0) return; // every other tick is plenty
 
-        float cap = Math.max(0.0001f, ClientState.cap());
-        float mobTarget = clamp01(ClientState.used() / cap);
-        float itemTarget = clamp01(ClientState.itemFill());
-        shownMobs = ease(shownMobs, mobTarget);
-        shownItems = ease(shownItems, itemTarget);
+        boolean sliders = GulpConfig.cpmSliders;
+        if (sliders) {
+            float cap = Math.max(0.0001f, ClientState.cap());
+            float mobTarget = clamp01(ClientState.used() / cap);
+            float itemTarget = clamp01(ClientState.itemFill());
+            shownMobs = ease(shownMobs, mobTarget);
+            shownItems = ease(shownItems, itemTarget);
+        } else {
+            shownMobs = 0f;
+            shownItems = 0f;
+        }
         float total = clamp01(shownMobs + 0.5f * shownItems);
 
         boolean resend = ticks % 200 == 0; // now and then, in case the player switched models
         boolean bellyExists = push(GulpConfig.cpmBellyName, BELLY_ALIASES, total, resend);
         boolean mobsExists = push(GulpConfig.cpmMobsName, MOBS_ALIASES, shownMobs, resend);
         boolean itemsExists = push(GulpConfig.cpmItemsName, ITEMS_ALIASES, shownItems, resend);
-        // A model with ANY of the three belly animations drives its own belly, so our built-in box steps aside.
+        // A model with ANY of the three belly animations drives its own belly, so our built-in box steps aside
+        // (whether the sliders are on or off).
         localModelHasBelly = bellyExists || mobsExists || itemsExists;
         report();
     }

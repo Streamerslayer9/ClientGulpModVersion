@@ -23,7 +23,7 @@ public class SettingsScreen extends Screen {
         bellyButton.setMessage(Component.literal("Belly style: " + GulpConfig.bellyStyle.label));
         levelUpButton.setMessage(Component.literal("Level-up messages: " + (GulpConfig.levelUpMessages ? "ON" : "OFF")));
         actionButton.setMessage(Component.literal("Action messages: " + (GulpConfig.actionMessages ? "ON" : "OFF")));
-        cpmButton.setMessage(Component.literal("CPM belly sliders: " + (GulpConfig.cpmSliders ? "ON" : "OFF")
+        cpmButton.setMessage(Component.literal("CPM belly sliders: " + (GulpConfig.cpmSliders ? "ON" : "OFF (flat)")
                 + (CpmBridge.available() ? "" : " (CPM not found)")));
         perkMenuButton.setMessage(Component.literal("Perk menu: " + (GulpConfig.legacyPerkMenu ? "Legacy" : "New look")));
         allowButton.setMessage(Component.literal("Let players swallow me: " + (ClientState.allowSwallowed() ? "ON" : "OFF")));
