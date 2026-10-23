@@ -81,9 +81,9 @@ public class SyncPacket {
             buf.writeInt(r);
         }
         buf.writeInt(m.entries.size());
-        Object object = m.entries.iterator();
+        java.util.Iterator<ClientState.EntryInfo> object = m.entries.iterator();
         while (object.hasNext()) {
-            ClientState.EntryInfo e = (ClientState.EntryInfo)object.next();
+            ClientState.EntryInfo e = object.next();
             buf.writeInt(e.uid());
             buf.m_130070_(Component.Serializer.m_130703_((Component)e.name()));
             buf.m_130070_(e.typeId());

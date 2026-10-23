@@ -31,7 +31,7 @@ public class Stomach {
     public int points = 0;
     public final int[] ranks = new int[Perk.values().length];
     public final List<CompoundTag> contents = new ArrayList<CompoundTag>();
-    public final NonNullList<ItemStack> storage = NonNullList.m_122780_((int)54, (Object)ItemStack.f_41583_);
+    public final NonNullList<ItemStack> storage = NonNullList.m_122780_((int)54, ItemStack.f_41583_);
     public boolean allowSwallowed = false;
     public int predator = 0;
     public int digestProgress = 0;
@@ -82,7 +82,7 @@ public class Stomach {
         }
         for (i = 0; i < slots && !remaining.m_41619_(); ++i) {
             if (!((ItemStack)this.storage.get(i)).m_41619_()) continue;
-            this.storage.set(i, (Object)remaining.m_41620_(Math.min(remaining.m_41613_(), remaining.m_41741_())));
+            this.storage.set(i, remaining.m_41620_(Math.min(remaining.m_41613_(), remaining.m_41741_())));
         }
         return remaining;
     }

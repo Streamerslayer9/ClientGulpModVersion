@@ -397,7 +397,7 @@ public final class StomachLogic {
         OPEN_VIEWS.put(p.m_20148_(), view);
         view.m_19164_(c -> {
             for (int i = 0; i < slots; ++i) {
-                s.storage.set(i, (Object)view.m_8020_(i));
+                s.storage.set(i, view.m_8020_(i));
             }
             mgr.m_77762_();
             StomachLogic.sync(p, s);
@@ -584,7 +584,7 @@ public final class StomachLogic {
                 ItemStack stack = (ItemStack)s.storage.get(i);
                 if (stack.m_41619_()) continue;
                 p.m_7197_(stack, true, false);
-                s.storage.set(i, (Object)ItemStack.f_41583_);
+                s.storage.set(i, ItemStack.f_41583_);
             }
         }
         mgr.m_77762_();

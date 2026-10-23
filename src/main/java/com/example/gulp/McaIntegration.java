@@ -326,7 +326,7 @@ public final class McaIntegration {
                 ServerPlayer p = server.m_6846_().m_11259_(s.player());
                 Brain brain = v.m_6274_();
                 if (p != null) {
-                    brain.m_21882_(MemoryModuleType.f_26382_, (Object)p, 40L);
+                    brain.m_21882_(MemoryModuleType.f_26382_, p, 40L);
                 }
                 brain.m_21889_(Activity.f_37984_);
             }

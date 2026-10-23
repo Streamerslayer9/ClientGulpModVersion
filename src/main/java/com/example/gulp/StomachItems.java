@@ -179,7 +179,7 @@ public final class StomachItems {
             Component name = stack.m_41786_();
             stack.m_41774_(1);
             if (stack.m_41619_()) {
-                s.storage.set(i, (Object)ItemStack.f_41583_);
+                s.storage.set(i, ItemStack.f_41583_);
             }
             for (ItemStack part : parts) {
                 int count = Math.max(1, (int)Math.round((double)part.m_41613_() * (0.5 + 0.5 * condition)));
@@ -196,7 +196,7 @@ public final class StomachItems {
             if (stack.m_41619_() || !stack.m_204117_(TRASH) || stack.m_41782_()) continue;
             stack.m_41774_(4);
             if (stack.m_41619_()) {
-                s.storage.set(i, (Object)ItemStack.f_41583_);
+                s.storage.set(i, ItemStack.f_41583_);
             }
             return true;
         }
