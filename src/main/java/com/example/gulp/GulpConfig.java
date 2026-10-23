@@ -14,9 +14,7 @@ public class GulpConfig {
         /** The original look: the whole torso (chest to waist) swells forward. */
         CLASSIC("Classic (whole torso)"),
         /** Only the lower stomach area swells; the chest stays flat. */
-        STOMACH("Stomach only"),
-        /** No built-in belly at all (for players whose Custom Player Model already has its own belly). */
-        OFF("Off (my model has one)");
+        STOMACH("Stomach only");
 
         public final String label;
         BellyStyle(String label) { this.label = label; }
@@ -70,7 +68,11 @@ public class GulpConfig {
             try (InputStream in = Files.newInputStream(f)) {
                 props.load(in);
             }
-            bellyStyle = BellyStyle.valueOf(props.getProperty("bellyStyle", BellyStyle.STOMACH.name()));
+            try {
+                bellyStyle = BellyStyle.valueOf(props.getProperty("bellyStyle", BellyStyle.STOMACH.name()));
+            } catch (IllegalArgumentException old) {
+                bellyStyle = BellyStyle.STOMACH; // e.g. the removed "OFF" style from an older version's config
+            }
             levelUpMessages = Boolean.parseBoolean(props.getProperty("levelUpMessages", "true"));
             actionMessages = Boolean.parseBoolean(props.getProperty("actionMessages", "true"));
             cpmSliders = Boolean.parseBoolean(props.getProperty("cpmSliders", "true"));

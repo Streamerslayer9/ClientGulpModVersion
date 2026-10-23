@@ -66,9 +66,6 @@ public class BellyLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<Ab
         int mode = isLocal ? CpmDriver.localMode() : ClientState.cpmMode(id);
         if (mode != CpmDriver.NONE || bodyHidden) return;
 
-        // "Off (my model has one)" is about YOUR OWN belly only. Other players still get their belly drawn.
-        if (isLocal && GulpConfig.bellyStyle == GulpConfig.BellyStyle.OFF) return;
-
         boolean classic = GulpConfig.bellyStyle == GulpConfig.BellyStyle.CLASSIC;
         ModelPart belly = classic ? bellyFull : bellyLow;
         ModelPart jacket = classic ? jacketFull : jacketLow;
