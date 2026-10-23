@@ -22,9 +22,6 @@ import net.minecraftforge.fml.common.Mod;
 public final class CpmTorsoScaling {
     private CpmTorsoScaling() { }
 
-    /** "Stomach only" style: how much of the whole-torso depth growth is used (1 = the same). */
-    private static final float STOMACH_DEPTH_FACTOR = 0.6f;
-
     private static ModelPart scaledBody;
     private static float savedZ;
 
@@ -48,14 +45,10 @@ public final class CpmTorsoScaling {
         if (shown < 0.02f || !shouldScale(player)) return;
 
         float bulge = (float) Math.sqrt(shown);
-        // The same two choices as the skin belly: "whole torso" swells forward and a little wider; "stomach only" is a
-        // gentler forward push with no widening. (A model's torso is one piece, so it can't be limited to just the
-        // lower stomach area the way the skin belly can.)
-        boolean isLocal = player == Minecraft.getInstance().player;
-        GulpConfig.BellyStyle style = isLocal ? GulpConfig.bellyStyle : ClientState.styleOf(player.getUUID());
-        boolean wholeTorso = style == GulpConfig.BellyStyle.CLASSIC;
-        float depthScale = 1f + bulge * BellyLayer.MAX_EXTRA_DEPTH * (wholeTorso ? 1f : STOMACH_DEPTH_FACTOR);
-        float widthScale = wholeTorso ? 1f + bulge * BellyLayer.MAX_EXTRA_WIDTH : 1f;
+        // A CPM model's torso is one piece, so it can only be scaled as a whole. Both Belly styles (whole torso /
+        // stomach only) therefore give the same whole-torso growth on a CPM model; the style only changes the skin belly.
+        float depthScale = 1f + bulge * BellyLayer.MAX_EXTRA_DEPTH;
+        float widthScale = 1f + bulge * BellyLayer.MAX_EXTRA_WIDTH;
 
         PlayerModel<AbstractClientPlayer> model = e.getRenderer().getModel();
         ModelPart body = model.body;
