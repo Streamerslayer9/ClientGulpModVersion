@@ -84,7 +84,8 @@ public final class ClientState {
         BELLY_TARGET.clear();
         BELLY_SHOWN.clear();
         BELLY_TIME.clear();
-        CPM_BELLY.clear();
+        CPM_MODE.clear();
+        BODY_HIDDEN.clear();
     }
 
     public static boolean isHard() { return hard; }
@@ -117,14 +118,25 @@ public final class ClientState {
 
     public static void setBelly(UUID id, float ratio) { BELLY_TARGET.put(id, ratio); }
 
-    /** Players whose Custom Player Model draws its own belly: the built-in skin bulge is not drawn on them. */
-    private static final java.util.Set<UUID> CPM_BELLY = new java.util.HashSet<>();
+    /** How each player's Custom Player Model handles the belly (see CpmDriver.NONE / ANIMATED / SCALE). */
+    private static final java.util.Map<UUID, Integer> CPM_MODE = new java.util.HashMap<>();
+    /** Players whose vanilla torso was hidden last frame (a CPM model replacing it). */
+    private static final java.util.Set<UUID> BODY_HIDDEN = new java.util.HashSet<>();
 
-    public static void setCpmBelly(UUID id, boolean has) {
-        if (has) CPM_BELLY.add(id); else CPM_BELLY.remove(id);
+    public static void setCpmMode(UUID id, int mode) {
+        if (mode == CpmDriver.NONE) CPM_MODE.remove(id); else CPM_MODE.put(id, mode);
     }
 
-    public static boolean hasCpmBelly(UUID id) { return CPM_BELLY.contains(id); }
+    public static int cpmMode(UUID id) { return CPM_MODE.getOrDefault(id, CpmDriver.NONE); }
+
+    public static void noteBodyHidden(UUID id, boolean hidden) {
+        if (hidden) BODY_HIDDEN.add(id); else BODY_HIDDEN.remove(id);
+    }
+
+    public static boolean bodyHiddenLastFrame(UUID id) { return BODY_HIDDEN.contains(id); }
+
+    /** The belly size currently shown for this player, without advancing the easing. */
+    public static float peekBelly(UUID id) { return BELLY_SHOWN.getOrDefault(id, 0f); }
 
     public static float bellyAmount(UUID id) { return BELLY_TARGET.getOrDefault(id, 0f); }
 

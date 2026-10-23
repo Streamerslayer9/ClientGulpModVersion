@@ -35,12 +35,19 @@ public final class CpmDriver {
     private static final String[] MOBS_ALIASES = {"belly_mobs", "stomach_mobs"};
     private static final String[] ITEMS_ALIASES = {"belly_items", "stomach_items"};
 
+    /** This player's CPM model has no belly animation of its own (or there is no CPM model). */
+    public static final int NONE = 0;
+    /** The model has belly animations and they are driven by how full the player is (sliders ON). */
+    public static final int ANIMATED = 1;
+    /** The model has belly animations but sliders are OFF: the model's torso itself is scaled instead. */
+    public static final int SCALE = 2;
+
     private static float shownMobs;
     private static float shownItems;
     private static boolean localModelHasBelly;
     private static int ticks;
     /** What the server was last told about our model (so we only send changes). */
-    private static boolean reportedBelly;
+    private static int reportedMode;
     /** Last value sent, keyed by the real animation name in the model. */
     private static final Map<String, Integer> LAST_SENT = new HashMap<>();
     /** Which real animation name each slider (by its configured name) resolved to, so we don't search every tick. */
@@ -51,11 +58,17 @@ public final class CpmDriver {
     /** Does the local player's CPM model have its own belly animation? (Then our built-in bulge steps aside.) */
     public static boolean localModelHandlesBelly() { return localModelHasBelly; }
 
+    /** NONE / ANIMATED / SCALE for the local player's model. */
+    public static int localMode() {
+        if (!localModelHasBelly) return NONE;
+        return GulpConfig.cpmSliders ? ANIMATED : SCALE;
+    }
+
     public static void reset() {
         shownMobs = 0f;
         shownItems = 0f;
         localModelHasBelly = false;
-        reportedBelly = false;
+        reportedMode = NONE;
         ticks = 0;
         LAST_SENT.clear();
         RESOLVED.clear();
@@ -65,9 +78,9 @@ public final class CpmDriver {
      * Called every client tick.
      *
      * Sliders ON:  the model's belly animations follow how full you are.
-     * Sliders OFF: the model's belly animations are held at 0, so the CPM belly stays completely flat no matter how
-     *              much you eat or swallow. The model is still detected, so the built-in skin belly stays hidden too
-     *              (otherwise it would pop up next to the model's own belly).
+     * Sliders OFF: the model's belly animations are held at 0 (so they don't add a second belly) and the model's torso
+     *              is scaled instead (CpmTorsoScaling). The model is still detected, so the built-in skin belly stays
+     *              hidden too.
      */
     public static void tick() {
         if (!CpmBridge.available()) {
@@ -102,9 +115,10 @@ public final class CpmDriver {
 
     /** Lets the server (and through it every other player) know whether our CPM model draws its own belly. */
     private static void report() {
-        if (reportedBelly == localModelHasBelly) return;
-        reportedBelly = localModelHasBelly;
-        Net.CHANNEL.sendToServer(new CpmBellyPacket(reportedBelly));
+        int mode = localMode();
+        if (reportedMode == mode) return;
+        reportedMode = mode;
+        Net.CHANNEL.sendToServer(new CpmBellyPacket(mode));
     }
 
     /** @return true if the model has a slider for this one (under the configured name or a common alternative) */

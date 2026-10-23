@@ -15,15 +15,16 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.world.entity.player.PlayerModelPart;
 
 import java.util.List;
+import java.util.UUID;
 
 /** Draws a stretched copy of the player's own torso (skin + clothing) bulging forward as the stomach fills. */
 public class BellyLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
 
     // ---- Tweak these to change how big the belly gets ----
     /** How many times deeper the torso gets when completely full (1 = no change). */
-    private static final float MAX_EXTRA_DEPTH = 1.6f;
+    static final float MAX_EXTRA_DEPTH = 1.6f;
     /** How much wider the torso gets when completely full. */
-    private static final float MAX_EXTRA_WIDTH = 0.18f;
+    static final float MAX_EXTRA_WIDTH = 0.18f;
 
     private final ModelPart bellyFull, jacketFull, bellyLow, jacketLow;
     private final ModelPart bellyFullClothing, jacketFullClothing, bellyLowClothing, jacketLowClothing;
@@ -54,15 +55,19 @@ public class BellyLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<Ab
         float shown = ClientState.smoothedBelly(player.getUUID());
         if (shown < 0.02f) return;
 
-        // "Off (my model has one)" is about YOUR OWN belly only. Other players still get their belly drawn.
         boolean isLocal = player == Minecraft.getInstance().player;
+        UUID id = player.getUUID();
+        // Remember whether a Custom Player Model has hidden the vanilla torso (CpmTorsoScaling reads this next frame).
+        boolean bodyHidden = !getParentModel().body.visible;
+        ClientState.noteBodyHidden(id, bodyHidden);
+
+        // A Custom Player Model never gets the skin belly drawn over it: it either drives its own belly animation, or
+        // its torso is scaled instead (CpmTorsoScaling).
+        int mode = isLocal ? CpmDriver.localMode() : ClientState.cpmMode(id);
+        if (mode != CpmDriver.NONE || bodyHidden) return;
+
+        // "Off (my model has one)" is about YOUR OWN belly only. Other players still get their belly drawn.
         if (isLocal && GulpConfig.bellyStyle == GulpConfig.BellyStyle.OFF) return;
-        // Your own Custom Player Model already has a belly animation: let it be the belly instead of ours.
-        if (isLocal && CpmDriver.localModelHandlesBelly()) return;
-        // Other players: their own client told us (through the server) that their CPM model draws its own belly.
-        if (ClientState.hasCpmBelly(player.getUUID())) return;
-        // A Custom Player Model that hides the vanilla torso: our copy of the skin torso would poke out of it.
-        if (!getParentModel().body.visible) return;
 
         boolean classic = GulpConfig.bellyStyle == GulpConfig.BellyStyle.CLASSIC;
         ModelPart belly = classic ? bellyFull : bellyLow;

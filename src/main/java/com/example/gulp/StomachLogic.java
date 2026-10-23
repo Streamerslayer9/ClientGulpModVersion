@@ -598,15 +598,15 @@ public final class StomachLogic {
         // Tell this player and everyone who can see them how full the belly is.
         float ratio = (float) Math.min(1.0, s.used() / s.capacity());
         Net.CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> p),
-                new BellyPacket(p.getUUID(), ratio, CPM_BELLY.contains(p.getUUID())));
+                new BellyPacket(p.getUUID(), ratio, CPM_MODE.getOrDefault(p.getUUID(), 0)));
     }
 
-    /** Players whose Custom Player Model draws its own belly (reported by their own client). */
-    private static final java.util.Set<UUID> CPM_BELLY = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    /** How each player's Custom Player Model handles the belly (reported by their own client). */
+    private static final java.util.Map<UUID, Integer> CPM_MODE = new java.util.concurrent.ConcurrentHashMap<>();
 
-    public static void setCpmBelly(ServerPlayer p, boolean hasBelly) {
-        if (hasBelly) CPM_BELLY.add(p.getUUID()); else CPM_BELLY.remove(p.getUUID());
+    public static void setCpmMode(ServerPlayer p, int mode) {
+        if (mode == 0) CPM_MODE.remove(p.getUUID()); else CPM_MODE.put(p.getUUID(), mode);
     }
 
-    public static void forgetCpmBelly(UUID id) { CPM_BELLY.remove(id); }
+    public static void forgetCpmBelly(UUID id) { CPM_MODE.remove(id); }
 }
