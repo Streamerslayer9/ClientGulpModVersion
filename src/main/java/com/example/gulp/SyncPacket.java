@@ -1,47 +1,65 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.nbt.CompoundTag
+ *  net.minecraft.network.FriendlyByteBuf
+ *  net.minecraft.network.chat.Component
+ *  net.minecraft.network.chat.Component$Serializer
+ *  net.minecraft.network.chat.MutableComponent
+ *  net.minecraftforge.network.NetworkEvent$Context
+ */
 package com.example.gulp;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
-
+import com.example.gulp.ClientState;
+import com.example.gulp.GulpServerConfig;
+import com.example.gulp.Perk;
+import com.example.gulp.Stomach;
+import com.example.gulp.StomachLogic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraftforge.network.NetworkEvent;
 
-/** Server -> client: everything the HUD and the stomach/perk screens need. */
 public class SyncPacket {
     public boolean hard;
-    public int level, xp, xpNeeded, points;
+    public int level;
+    public int xp;
+    public int xpNeeded;
+    public int points;
     public boolean allowSwallowed;
     public int predator;
     public float itemFill;
     public int digestProgress;
-    public float used, cap;
+    public float used;
+    public float cap;
     public int[] ranks = new int[Perk.values().length];
-    public List<ClientState.EntryInfo> entries = new ArrayList<>();
+    public List<ClientState.EntryInfo> entries = new ArrayList<ClientState.EntryInfo>();
 
     public static SyncPacket from(Stomach s) {
         SyncPacket m = new SyncPacket();
-        m.hard = s.hard && GulpServerConfig.HARD_MODE_ENABLED.get(); // show SOFT if the server has hard mode off
+        m.hard = s.hard && (Boolean)GulpServerConfig.HARD_MODE_ENABLED.get() != false;
         m.level = s.level;
         m.xp = s.xp;
         m.xpNeeded = Stomach.xpForNext(s.level);
-        m.used = (float) s.used();
-        m.cap = (float) s.capacity();
+        m.used = (float)s.used();
+        m.cap = (float)s.capacity();
         m.points = s.points;
         m.allowSwallowed = s.allowSwallowed;
         m.predator = s.predator;
         m.itemFill = s.itemFill();
         m.digestProgress = s.digestProgress;
-        for (Perk p : Perk.values()) m.ranks[p.ordinal()] = s.rank(p);
+        for (Perk p : Perk.values()) {
+            m.ranks[p.ordinal()] = s.rank(p);
+        }
         for (CompoundTag e : s.contents) {
-            CompoundTag ent = e.getCompound("Entity");
-            int dt = Math.max(1, e.getInt("DigestTime"));
-            m.entries.add(new ClientState.EntryInfo(
-                    e.getInt("Uid"), StomachLogic.entryName(e), ent.getString("id"),
-                    e.getFloat("Size"), ent.getFloat("Health"), e.getFloat("MaxHealth"),
-                    Math.min(1f, e.getInt("Digest") / (float) dt)));
+            CompoundTag ent = e.m_128469_("Entity");
+            int dt = Math.max(1, e.m_128451_("DigestTime"));
+            m.entries.add(new ClientState.EntryInfo(e.m_128451_("Uid"), StomachLogic.entryName(e), ent.m_128461_("id"), e.m_128457_("Size"), ent.m_128457_("Health"), e.m_128457_("MaxHealth"), Math.min(1.0f, (float)e.m_128451_("Digest") / (float)dt)));
         }
         return m;
     }
@@ -59,12 +77,16 @@ public class SyncPacket {
         buf.writeFloat(m.itemFill);
         buf.writeInt(m.digestProgress);
         buf.writeInt(m.ranks.length);
-        for (int r : m.ranks) buf.writeInt(r);
+        for (int r : m.ranks) {
+            buf.writeInt(r);
+        }
         buf.writeInt(m.entries.size());
-        for (ClientState.EntryInfo e : m.entries) {
+        Object object = m.entries.iterator();
+        while (object.hasNext()) {
+            ClientState.EntryInfo e = (ClientState.EntryInfo)object.next();
             buf.writeInt(e.uid());
-            buf.writeUtf(Component.Serializer.toJson(e.name()));
-            buf.writeUtf(e.typeId());
+            buf.m_130070_(Component.Serializer.m_130703_((Component)e.name()));
+            buf.m_130070_(e.typeId());
             buf.writeFloat(e.size());
             buf.writeFloat(e.hp());
             buf.writeFloat(e.maxHp());
@@ -86,21 +108,24 @@ public class SyncPacket {
         m.itemFill = buf.readFloat();
         m.digestProgress = buf.readInt();
         int perkCount = buf.readInt();
-        for (int i = 0; i < perkCount; i++) {
+        for (int i = 0; i < perkCount; ++i) {
             int v = buf.readInt();
-            if (i < m.ranks.length) m.ranks[i] = v;
+            if (i >= m.ranks.length) continue;
+            m.ranks[i] = v;
         }
         int n = buf.readInt();
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; ++i) {
             int uid = buf.readInt();
-            Component name = Component.Serializer.fromJson(buf.readUtf());
-            if (name == null) name = Component.empty();
-            String type = buf.readUtf();
+            MutableComponent name = Component.Serializer.m_130701_((String)buf.m_130277_());
+            if (name == null) {
+                name = Component.m_237119_();
+            }
+            String type = buf.m_130277_();
             float size = buf.readFloat();
             float hp = buf.readFloat();
             float maxHp = buf.readFloat();
             float dig = buf.readFloat();
-            m.entries.add(new ClientState.EntryInfo(uid, name, type, size, hp, maxHp, dig));
+            m.entries.add(new ClientState.EntryInfo(uid, (Component)name, type, size, hp, maxHp, dig));
         }
         return m;
     }
@@ -111,3 +136,4 @@ public class SyncPacket {
         c.setPacketHandled(true);
     }
 }
+

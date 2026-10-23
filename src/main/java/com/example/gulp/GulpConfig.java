@@ -1,62 +1,50 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraftforge.fml.loading.FMLPaths
+ */
 package com.example.gulp;
 
-import net.minecraftforge.fml.loading.FMLPaths;
-
+import com.example.gulp.GulpSound;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Properties;
+import net.minecraftforge.fml.loading.FMLPaths;
 
-/** Client-side settings, saved to config/gulp-client.properties. */
 public class GulpConfig {
-    public enum BellyStyle {
-        /** The original look: the whole torso (chest to waist) swells forward. */
-        CLASSIC("Classic (whole torso)"),
-        /** Only the lower stomach area swells; the chest stays flat. */
-        STOMACH("Stomach only"),
-        /** No built-in belly at all (for players whose Custom Player Model already has its own belly). */
-        OFF("Off (my model has one)");
-
-        public final String label;
-        BellyStyle(String label) { this.label = label; }
-
-        public BellyStyle next() {
-            BellyStyle[] v = values();
-            return v[(ordinal() + 1) % v.length];
-        }
-    }
-
     public static BellyStyle bellyStyle = BellyStyle.STOMACH;
     public static boolean levelUpMessages = true;
-
-    /** The short action-bar messages when you do something (swallow, release, "too big", ...). */
     public static boolean actionMessages = true;
-
-    /** Custom Player Models: drive the model's belly animations from your stomach (does nothing without CPM). */
     public static boolean cpmSliders = true;
-    /** Names of the animations in your CPM model. Change them in config/gulp-client.properties. */
     public static String cpmBellyName = "belly";
     public static String cpmMobsName = "belly_mobs";
     public static String cpmItemsName = "belly_items";
-
-    /** true = the old list-style perk menu, false = the new look (nodes around a hub). */
     public static boolean legacyPerkMenu = false;
-
-    /** true = the mod's own sounds, false = the Minecraft stand-in sounds. */
     public static boolean useCustomSounds = true;
     private static final boolean[] SOUND_ON = new boolean[GulpSound.values().length];
-    static { java.util.Arrays.fill(SOUND_ON, true); }
+    private static final float[] SOUND_VOLUME;
 
-    /** Per-sound volume: 0.0 = silent, 1.0 = normal (100%), 2.0 = double (200%). */
-    private static final float[] SOUND_VOLUME = new float[GulpSound.values().length];
-    static { java.util.Arrays.fill(SOUND_VOLUME, 1.0f); }
+    public static float volume(GulpSound s) {
+        return SOUND_VOLUME[s.ordinal()];
+    }
 
-    public static float volume(GulpSound s) { return SOUND_VOLUME[s.ordinal()]; }
-    public static void setVolume(GulpSound s, float v) { SOUND_VOLUME[s.ordinal()] = Math.max(0f, Math.min(2f, v)); }
+    public static void setVolume(GulpSound s, float v) {
+        GulpConfig.SOUND_VOLUME[s.ordinal()] = Math.max(0.0f, Math.min(2.0f, v));
+    }
 
-    public static boolean isOn(GulpSound s) { return SOUND_ON[s.ordinal()]; }
-    public static void setOn(GulpSound s, boolean on) { SOUND_ON[s.ordinal()] = on; }
+    public static boolean isOn(GulpSound s) {
+        return SOUND_ON[s.ordinal()];
+    }
+
+    public static void setOn(GulpSound s, boolean on) {
+        GulpConfig.SOUND_ON[s.ordinal()] = on;
+    }
 
     private static Path file() {
         return FMLPaths.CONFIGDIR.get().resolve("gulp-client.properties");
@@ -64,10 +52,12 @@ public class GulpConfig {
 
     public static void load() {
         try {
-            Path f = file();
-            if (!Files.exists(f)) return;
+            Path f = GulpConfig.file();
+            if (!Files.exists(f, new LinkOption[0])) {
+                return;
+            }
             Properties props = new Properties();
-            try (InputStream in = Files.newInputStream(f)) {
+            try (InputStream in = Files.newInputStream(f, new OpenOption[0]);){
                 props.load(in);
             }
             bellyStyle = BellyStyle.valueOf(props.getProperty("bellyStyle", BellyStyle.STOMACH.name()));
@@ -80,11 +70,12 @@ public class GulpConfig {
             legacyPerkMenu = Boolean.parseBoolean(props.getProperty("legacyPerkMenu", "false"));
             useCustomSounds = Boolean.parseBoolean(props.getProperty("customSounds", "true"));
             for (GulpSound s : GulpSound.values()) {
-                setOn(s, Boolean.parseBoolean(props.getProperty("sound." + s.name(), "true")));
-                setVolume(s, Float.parseFloat(props.getProperty("volume." + s.name(), "1.0")));
+                GulpConfig.setOn(s, Boolean.parseBoolean(props.getProperty("sound." + s.name(), "true")));
+                GulpConfig.setVolume(s, Float.parseFloat(props.getProperty("volume." + s.name(), "1.0")));
             }
-        } catch (Exception ignored) {
-            // Bad or missing file: keep defaults.
+        }
+        catch (Exception exception) {
+            // empty catch block
         }
     }
 
@@ -101,13 +92,39 @@ public class GulpConfig {
             props.setProperty("legacyPerkMenu", Boolean.toString(legacyPerkMenu));
             props.setProperty("customSounds", Boolean.toString(useCustomSounds));
             for (GulpSound s : GulpSound.values()) {
-                props.setProperty("sound." + s.name(), Boolean.toString(isOn(s)));
-                props.setProperty("volume." + s.name(), Float.toString(volume(s)));
+                props.setProperty("sound." + s.name(), Boolean.toString(GulpConfig.isOn(s)));
+                props.setProperty("volume." + s.name(), Float.toString(GulpConfig.volume(s)));
             }
-            try (OutputStream out = Files.newOutputStream(file())) {
+            try (OutputStream out = Files.newOutputStream(GulpConfig.file(), new OpenOption[0]);){
                 props.store(out, "Gulp client settings");
             }
-        } catch (Exception ignored) {
+        }
+        catch (Exception exception) {
+            // empty catch block
+        }
+    }
+
+    static {
+        Arrays.fill(SOUND_ON, true);
+        SOUND_VOLUME = new float[GulpSound.values().length];
+        Arrays.fill(SOUND_VOLUME, 1.0f);
+    }
+
+    public static enum BellyStyle {
+        CLASSIC("Classic (whole torso)"),
+        STOMACH("Stomach only"),
+        OFF("Off (my model has one)");
+
+        public final String label;
+
+        private BellyStyle(String label) {
+            this.label = label;
+        }
+
+        public BellyStyle next() {
+            BellyStyle[] v = BellyStyle.values();
+            return v[(this.ordinal() + 1) % v.length];
         }
     }
 }
+

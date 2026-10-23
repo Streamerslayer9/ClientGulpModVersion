@@ -1,11 +1,17 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.network.FriendlyByteBuf
+ *  net.minecraftforge.network.NetworkEvent$Context
+ */
 package com.example.gulp;
 
+import com.example.gulp.ClientState;
+import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.function.Supplier;
-
-/** Server -> client: "you levelled up". The client decides whether to show a chat message (see Settings). */
 public class LevelUpPacket {
     private final int level;
     private final int points;
@@ -30,3 +36,4 @@ public class LevelUpPacket {
         c.setPacketHandled(true);
     }
 }
+

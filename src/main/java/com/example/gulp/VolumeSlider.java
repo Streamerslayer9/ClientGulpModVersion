@@ -1,34 +1,41 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.client.gui.components.AbstractSliderButton
+ *  net.minecraft.network.chat.Component
+ */
 package com.example.gulp;
 
+import com.example.gulp.ClientSounds;
+import com.example.gulp.GulpConfig;
+import com.example.gulp.GulpSound;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.network.chat.Component;
 
-/** A 0% - 200% volume slider for one sound. The middle of the slider is 100%. Moves in steps of 5%. */
-public class VolumeSlider extends AbstractSliderButton {
+public class VolumeSlider
+extends AbstractSliderButton {
     private final GulpSound sound;
 
     public VolumeSlider(int x, int y, int width, int height, GulpSound sound) {
-        super(x, y, width, height, Component.empty(), GulpConfig.volume(sound) / 2.0);
+        super(x, y, width, height, (Component)Component.m_237119_(), (double)GulpConfig.volume(sound) / 2.0);
         this.sound = sound;
-        updateMessage();
+        this.m_5695_();
     }
 
-    @Override
-    protected void updateMessage() {
-        setMessage(Component.literal(sound.label + ": " + Math.round(GulpConfig.volume(sound) * 100) + "%"));
+    protected void m_5695_() {
+        this.m_93666_((Component)Component.m_237113_((String)(this.sound.label + ": " + Math.round(GulpConfig.volume(this.sound) * 100.0f) + "%")));
     }
 
-    @Override
-    protected void applyValue() {
-        // 200% / 40 steps = 5% each, and 100% lands exactly in the middle.
-        this.value = Math.round(this.value * 40.0) / 40.0;
-        GulpConfig.setVolume(sound, (float) (this.value * 2.0));
+    protected void m_5697_() {
+        this.f_93577_ = (double)Math.round(this.f_93577_ * 40.0) / 40.0;
+        GulpConfig.setVolume(this.sound, (float)(this.f_93577_ * 2.0));
     }
 
-    @Override
-    public void onRelease(double mouseX, double mouseY) {
-        super.onRelease(mouseX, mouseY);
+    public void m_7691_(double mouseX, double mouseY) {
+        super.m_7691_(mouseX, mouseY);
         GulpConfig.save();
-        ClientSounds.preview(sound); // let them hear it
+        ClientSounds.preview(this.sound);
     }
 }
+

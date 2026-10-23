@@ -1,98 +1,127 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  com.mojang.logging.LogUtils
+ *  org.slf4j.Logger
+ */
 package com.example.gulp;
 
+import com.example.gulp.ClientState;
+import com.example.gulp.CpmBridge;
+import com.example.gulp.GulpConfig;
 import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
-
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
 
-/**
- * Drives the belly "sliders" of your Custom Player Model (CPM), from this player's own stomach.
- *
- * The model's author adds animations to the model in the CPM editor (value layers, so they can sit anywhere
- * between "empty" and "full") and names them:
- *   belly        how full you are overall (creatures, plus items counting half as much)
- *   belly_mobs   how full of creatures you are (their volume compared to your capacity)
- *   belly_items  how full your item storage is
- * Each is set to a value between 0 and the maximum the model allows for that animation (we read the maximum from the
- * model, so any range works). An animation the model doesn't have is simply skipped. The names can be changed in
- * config/gulp-client.properties. Values ease toward their target so the belly grows and shrinks smoothly.
- * CPM then shows it to everyone, the same way it shares any other animation.
- *
- * CPM matches animation names exactly (capital letters count, "Belly" is not "belly") and its API can't list a model's
- * animations, so for each slider this tries the configured name in a few spellings (belly, Belly, BELLY, Belly_Mobs,
- * "Belly Mobs" ...) plus a few common alternative names (stomach, stomach_scale ...). No model files or folders are
- * involved: whatever model the player is wearing is checked again whenever it stops answering.
- */
 public final class CpmDriver {
     private static final Logger LOGGER = LogUtils.getLogger();
-
-    /** Other names a model author might reasonably have used, tried after the configured name. */
-    private static final String[] BELLY_ALIASES = {"belly", "stomach", "stomach_scale", "belly_scale", "tummy"};
-    private static final String[] MOBS_ALIASES = {"belly_mobs", "stomach_mobs"};
-    private static final String[] ITEMS_ALIASES = {"belly_items", "stomach_items"};
-
+    private static final String[] BELLY_ALIASES = new String[]{"belly", "stomach", "stomach_scale", "belly_scale", "tummy"};
+    private static final String[] MOBS_ALIASES = new String[]{"belly_mobs", "stomach_mobs"};
+    private static final String[] ITEMS_ALIASES = new String[]{"belly_items", "stomach_items"};
     private static float shownMobs;
     private static float shownItems;
     private static boolean localModelHasBelly;
     private static int ticks;
-    /** Last value sent, keyed by the real animation name in the model. */
-    private static final Map<String, Integer> LAST_SENT = new HashMap<>();
-    /** Which real animation name each slider (by its configured name) resolved to, so we don't search every tick. */
-    private static final Map<String, String> RESOLVED = new HashMap<>();
+    private static boolean reportedFlag;
+    private static int offTicks;
+    private static final Map<String, Integer> LAST_SENT;
+    private static final Map<String, String> RESOLVED;
 
-    private CpmDriver() { }
+    private CpmDriver() {
+    }
 
-    /** Does the local player's CPM model have its own belly animation? (Then our built-in bulge steps aside.) */
-    public static boolean localModelHandlesBelly() { return localModelHasBelly; }
+    public static boolean localModelHandlesBelly() {
+        return localModelHasBelly;
+    }
 
     public static void reset() {
-        shownMobs = 0f;
-        shownItems = 0f;
+        shownMobs = 0.0f;
+        shownItems = 0.0f;
         localModelHasBelly = false;
+        reportedFlag = false;
         ticks = 0;
         LAST_SENT.clear();
         RESOLVED.clear();
     }
 
-    /** Called every client tick. */
     public static void tick() {
         if (!GulpConfig.cpmSliders || !CpmBridge.available()) {
+            // CPM sliders are off (or CPM is missing): hand the belly back to the
+            // built-in layer for THIS player only, and zero out any slider we drove
+            // earlier so the CPM belly doesn't stay stuck on this player's model.
+            if (!LAST_SENT.isEmpty()) {
+                if (CpmBridge.available()) {
+                    for (String name : LAST_SENT.keySet()) {
+                        CpmBridge.play(name, 0);
+                    }
+                }
+                LAST_SENT.clear();
+                RESOLVED.clear();
+                shownMobs = 0.0f;
+                shownItems = 0.0f;
+            }
             localModelHasBelly = false;
+            CpmDriver.report(CpmDriver.styleOff(), ++offTicks % 200 == 0);
             return;
         }
-        if (++ticks % 2 != 0) return; // every other tick is plenty
-
-        float cap = Math.max(0.0001f, ClientState.cap());
-        float mobTarget = clamp01(ClientState.used() / cap);
-        float itemTarget = clamp01(ClientState.itemFill());
-        shownMobs = ease(shownMobs, mobTarget);
-        shownItems = ease(shownItems, itemTarget);
-        float total = clamp01(shownMobs + 0.5f * shownItems);
-
-        boolean resend = ticks % 200 == 0; // now and then, in case the player switched models
-        boolean bellyExists = push(GulpConfig.cpmBellyName, BELLY_ALIASES, total, resend);
-        boolean mobsExists = push(GulpConfig.cpmMobsName, MOBS_ALIASES, shownMobs, resend);
-        boolean itemsExists = push(GulpConfig.cpmItemsName, ITEMS_ALIASES, shownItems, resend);
-        // A model with ANY of the three belly animations drives its own belly, so our built-in box steps aside.
+        if (++ticks % 2 != 0) {
+            return;
+        }
+        float cap = Math.max(1.0E-4f, ClientState.cap());
+        float mobTarget = CpmDriver.clamp01(ClientState.used() / cap);
+        float itemTarget = CpmDriver.clamp01(ClientState.itemFill());
+        shownMobs = CpmDriver.ease(shownMobs, mobTarget);
+        shownItems = CpmDriver.ease(shownItems, itemTarget);
+        float total = CpmDriver.clamp01(shownMobs + 0.5f * shownItems);
+        boolean resend = ticks % 200 == 0;
+        boolean bellyExists = CpmDriver.push(GulpConfig.cpmBellyName, BELLY_ALIASES, total, resend);
+        boolean mobsExists = CpmDriver.push(GulpConfig.cpmMobsName, MOBS_ALIASES, shownMobs, resend);
+        boolean itemsExists = CpmDriver.push(GulpConfig.cpmItemsName, ITEMS_ALIASES, shownItems, resend);
         localModelHasBelly = bellyExists || mobsExists || itemsExists;
+        CpmDriver.report(localModelHasBelly || CpmDriver.styleOff(), resend);
     }
 
-    /** @return true if the model has a slider for this one (under the configured name or a common alternative) */
+    private static boolean styleOff() {
+        return GulpConfig.bellyStyle == GulpConfig.BellyStyle.OFF;
+    }
+
+    /** Tell the server (and through it every other client) whether OUR CPM model draws its own belly. */
+    private static void report(boolean flag, boolean force) {
+        if (flag == reportedFlag && !force) {
+            return;
+        }
+        try {
+            if (net.minecraft.client.Minecraft.m_91087_().m_91403_() == null) {
+                return;
+            }
+            Net.CHANNEL.sendToServer((Object)new CpmFlagPacket(new java.util.UUID(0L, 0L), flag));
+            reportedFlag = flag;
+        }
+        catch (Throwable t) {
+            // not connected yet; try again on the next tick
+        }
+    }
+
     private static boolean push(String configured, String[] aliases, float ratio, boolean force) {
-        if (configured == null || configured.isBlank()) return false;
-        String name = resolve(configured, aliases);
-        if (name == null) return false; // this model has no such animation
+        if (configured == null || configured.isBlank()) {
+            return false;
+        }
+        String name = CpmDriver.resolve(configured, aliases);
+        if (name == null) {
+            return false;
+        }
         int max = CpmBridge.maxValue(name);
-        if (max < 0) { // it was there a moment ago: the player switched models
+        if (max < 0) {
             RESOLVED.remove(configured);
             LAST_SENT.remove(name);
             return false;
         }
-        int value = Math.max(0, Math.min(max, Math.round(ratio * max)));
+        int value = Math.max(0, Math.min(max, Math.round(ratio * (float)max)));
         Integer last = LAST_SENT.get(name);
         if (force || last == null || last != value) {
             CpmBridge.play(name, value);
@@ -101,40 +130,45 @@ public final class CpmDriver {
         return true;
     }
 
-    /** The animation name this slider really has in the current model, or null if the model has none. */
     private static String resolve(String configured, String[] aliases) {
         String known = RESOLVED.get(configured);
-        if (known != null && CpmBridge.maxValue(known) >= 0) return known;
-        // Nothing found yet (a normal skin, say): only search about once a second instead of on every update.
-        if (known == null && ticks % 20 != 0) return null;
-
-        Set<String> candidates = new LinkedHashSet<>(variants(configured));
-        for (String alias : aliases) candidates.addAll(variants(alias));
+        if (known != null && CpmBridge.maxValue(known) >= 0) {
+            return known;
+        }
+        if (known == null && ticks % 20 != 0) {
+            return null;
+        }
+        LinkedHashSet<String> candidates = new LinkedHashSet<String>(CpmDriver.variants(configured));
+        for (String alias : aliases) {
+            candidates.addAll(CpmDriver.variants(alias));
+        }
         for (String candidate : candidates) {
             int max = CpmBridge.maxValue(candidate);
-            if (max >= 0) {
-                if (!candidate.equals(known)) {
-                    LOGGER.info("Vore Mod: found a CPM belly slider named '{}' (max {}) for '{}'", candidate, max, configured);
-                }
-                RESOLVED.put(configured, candidate);
-                return candidate;
+            if (max < 0) continue;
+            if (!candidate.equals(known)) {
+                LOGGER.info("Vore Mod: found a CPM belly slider named '{}' (max {}) for '{}'", new Object[]{candidate, max, configured});
             }
+            RESOLVED.put(configured, candidate);
+            return candidate;
         }
-        if (known != null) RESOLVED.remove(configured);
+        if (known != null) {
+            RESOLVED.remove(configured);
+        }
         return null;
     }
 
-    /** The same name in the spellings people commonly use: belly_mobs, Belly_mobs, BELLY_MOBS, Belly_Mobs, Belly Mobs ... */
     private static Set<String> variants(String name) {
-        Set<String> out = new LinkedHashSet<>();
+        LinkedHashSet<String> out = new LinkedHashSet<String>();
         String trimmed = name.trim();
-        if (trimmed.isEmpty()) return out;
+        if (trimmed.isEmpty()) {
+            return out;
+        }
         for (String base : new String[]{trimmed, trimmed.replace('_', ' ')}) {
             out.add(base);
             out.add(base.toLowerCase(Locale.ROOT));
             out.add(base.toUpperCase(Locale.ROOT));
-            out.add(capitalize(base));
-            out.add(titleCase(base));
+            out.add(CpmDriver.capitalize(base));
+            out.add(CpmDriver.titleCase(base));
         }
         return out;
     }
@@ -143,7 +177,6 @@ public final class CpmDriver {
         return s.substring(0, 1).toUpperCase(Locale.ROOT) + s.substring(1).toLowerCase(Locale.ROOT);
     }
 
-    /** Capitalises each word, keeping whatever separator (underscore or space) was there. */
     private static String titleCase(String s) {
         StringBuilder sb = new StringBuilder();
         boolean startOfWord = true;
@@ -151,10 +184,10 @@ public final class CpmDriver {
             if (c == '_' || c == ' ') {
                 startOfWord = true;
                 sb.append(c);
-            } else {
-                sb.append(startOfWord ? Character.toUpperCase(c) : Character.toLowerCase(c));
-                startOfWord = false;
+                continue;
             }
+            sb.append(startOfWord ? Character.toUpperCase(c) : Character.toLowerCase(c));
+            startOfWord = false;
         }
         return sb.toString();
     }
@@ -164,5 +197,13 @@ public final class CpmDriver {
         return Math.abs(target - next) < 0.004f ? target : next;
     }
 
-    private static float clamp01(float v) { return Math.max(0f, Math.min(1f, v)); }
+    private static float clamp01(float v) {
+        return Math.max(0.0f, Math.min(1.0f, v));
+    }
+
+    static {
+        LAST_SENT = new HashMap<String, Integer>();
+        RESOLVED = new HashMap<String, String>();
+    }
 }
+

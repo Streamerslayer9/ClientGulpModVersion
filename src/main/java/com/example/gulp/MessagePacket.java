@@ -1,16 +1,19 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  net.minecraft.network.FriendlyByteBuf
+ *  net.minecraft.network.chat.Component
+ *  net.minecraftforge.network.NetworkEvent$Context
+ */
 package com.example.gulp;
 
+import com.example.gulp.ClientState;
+import java.util.function.Supplier;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.function.Supplier;
-
-/**
- * Server -> client: a short "what just happened" message for the action bar (Gulp! Swallowed Cow, Too big for your
- * stomach, ...). It goes through the mod instead of straight to the screen so each player can turn them off
- * in Settings, without hiding anyone else's action bar messages.
- */
 public class MessagePacket {
     private final Component text;
 
@@ -19,11 +22,11 @@ public class MessagePacket {
     }
 
     public static void encode(MessagePacket m, FriendlyByteBuf buf) {
-        buf.writeComponent(m.text);
+        buf.m_130083_(m.text);
     }
 
     public static MessagePacket decode(FriendlyByteBuf buf) {
-        return new MessagePacket(buf.readComponent());
+        return new MessagePacket(buf.m_130238_());
     }
 
     public static void handle(MessagePacket m, Supplier<NetworkEvent.Context> ctx) {
@@ -32,3 +35,4 @@ public class MessagePacket {
         c.setPacketHandled(true);
     }
 }
+
