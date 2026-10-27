@@ -85,15 +85,31 @@ public final class McaIntegration {
     }
 
     /**
-     * Finds one of MCA's classes by its normal name (net.mca...). MCA's Forge build renames its classes with a
-     * "forge." in front (forge.net.mca...), so that spelling is tried too. Used here and in McaSkins.
+     * Finds one of MCA's classes. Pass the old-style name (net.mca...). MCA has been packaged several ways over time,
+     * so every known spelling is tried:
+     *   net.mca...                 older MCA
+     *   forge.net.mca...           older MCA, Forge build (renamed with "forge." in front)
+     *   net.conczin.mca...         newer MCA (7.x)
+     *   forge.net.conczin.mca...   newer MCA, Forge build
+     * Used here and in McaSkins.
      */
     static Class<?> mcaClass(String name) throws ClassNotFoundException {
-        try {
-            return Class.forName(name);
-        } catch (ClassNotFoundException notPlain) {
-            return Class.forName("forge." + name);
+        String tail = name.startsWith("net.mca.") ? name.substring("net.mca.".length()) : name;
+        String[] candidates = {
+                "net.mca." + tail,
+                "forge.net.mca." + tail,
+                "net.conczin.mca." + tail,
+                "forge.net.conczin.mca." + tail
+        };
+        ClassNotFoundException first = null;
+        for (String candidate : candidates) {
+            try {
+                return Class.forName(candidate);
+            } catch (ClassNotFoundException e) {
+                if (first == null) first = e;
+            }
         }
+        throw new ClassNotFoundException("MCA class not found under any known package: " + tail, first);
     }
 
     private static boolean ensureReflection() {

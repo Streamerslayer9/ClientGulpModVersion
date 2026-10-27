@@ -103,10 +103,13 @@ public class StomachScreen extends Screen {
             int ry = y + HEADER + i * ROW_H;
             addRenderableWidget(Button.builder(Component.literal("Release"), btn -> Net.send(4, e.uid()))
                     .bounds(x + W - 108, ry + 4, 50, 20).build());
-            Button digest = Button.builder(Component.literal("Digest"), btn -> Net.send(5, e.uid()))
-                    .bounds(x + W - 56, ry + 4, 48, 20).build();
-            digest.active = !"minecraft:player".equals(e.typeId()); // swallowed players are only held, never digested
-            addRenderableWidget(digest);
+            // The instant "Digest" button can be switched off in Settings (some players don't want it).
+            if (GulpConfig.instantDigestButton) {
+                Button digest = Button.builder(Component.literal("Digest"), btn -> Net.send(5, e.uid()))
+                        .bounds(x + W - 56, ry + 4, 48, 20).build();
+                digest.active = !"minecraft:player".equals(e.typeId()); // swallowed players are only held, never digested
+                addRenderableWidget(digest);
+            }
         }
 
         int fy = y + HEADER + ROWS * ROW_H + 6;

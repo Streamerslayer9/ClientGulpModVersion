@@ -33,6 +33,8 @@ public class GulpConfig {
 
     /** Custom Player Models: drive the model's belly animations from your stomach (does nothing without CPM). */
     public static boolean cpmSliders = true;
+    /** Show the "Digest" (instantly digest this mob) button in the stomach menu. */
+    public static boolean instantDigestButton = true;
     /** Names of the animations in your CPM model. Change them in config/gulp-client.properties. */
     public static String cpmBellyName = "belly";
     public static String cpmMobsName = "belly_mobs";
@@ -76,6 +78,7 @@ public class GulpConfig {
             levelUpMessages = Boolean.parseBoolean(props.getProperty("levelUpMessages", "true"));
             actionMessages = Boolean.parseBoolean(props.getProperty("actionMessages", "true"));
             cpmSliders = Boolean.parseBoolean(props.getProperty("cpmSliders", "true"));
+            instantDigestButton = Boolean.parseBoolean(props.getProperty("instantDigestButton", "true"));
             cpmBellyName = props.getProperty("cpmBellyName", "belly").trim();
             cpmMobsName = props.getProperty("cpmMobsName", "belly_mobs").trim();
             cpmItemsName = props.getProperty("cpmItemsName", "belly_items").trim();
@@ -97,6 +100,7 @@ public class GulpConfig {
             props.setProperty("levelUpMessages", Boolean.toString(levelUpMessages));
             props.setProperty("actionMessages", Boolean.toString(actionMessages));
             props.setProperty("cpmSliders", Boolean.toString(cpmSliders));
+            props.setProperty("instantDigestButton", Boolean.toString(instantDigestButton));
             props.setProperty("cpmBellyName", cpmBellyName);
             props.setProperty("cpmMobsName", cpmMobsName);
             props.setProperty("cpmItemsName", cpmItemsName);

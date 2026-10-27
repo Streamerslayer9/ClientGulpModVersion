@@ -8,9 +8,9 @@ import net.minecraft.network.chat.Component;
 /** Client-side settings. Saved to config/gulp-client.properties. */
 public class SettingsScreen extends Screen {
     private static final int W = 250;
-    private static final int H = 224;
+    private static final int H = 250;
 
-    private Button bellyButton, levelUpButton, actionButton, allowButton, perkMenuButton, cpmButton;
+    private Button bellyButton, levelUpButton, actionButton, allowButton, perkMenuButton, cpmButton, digestButton;
 
     public SettingsScreen() {
         super(Component.literal("Gulp Settings"));
@@ -25,6 +25,7 @@ public class SettingsScreen extends Screen {
         actionButton.setMessage(Component.literal("Action messages: " + (GulpConfig.actionMessages ? "ON" : "OFF")));
         cpmButton.setMessage(Component.literal("CPM belly sliders: " + (GulpConfig.cpmSliders ? "ON" : "OFF")
                 + (CpmBridge.available() ? "" : " (CPM not found)")));
+        digestButton.setMessage(Component.literal("Instant digest button: " + (GulpConfig.instantDigestButton ? "ON" : "OFF")));
         perkMenuButton.setMessage(Component.literal("Perk menu: " + (GulpConfig.legacyPerkMenu ? "Legacy" : "New look")));
         allowButton.setMessage(Component.literal("Let players swallow me: " + (ClientState.allowSwallowed() ? "ON" : "OFF")));
     }
@@ -71,6 +72,14 @@ public class SettingsScreen extends Screen {
             refresh();
         }).bounds(x + 15, y + 166, W - 30, 20).build();
 
+        // Shows or hides the "Digest" button next to each mob in the stomach menu.
+        digestButton = Button.builder(Component.empty(), btn -> {
+            GulpConfig.instantDigestButton = !GulpConfig.instantDigestButton;
+            GulpConfig.save();
+            refresh();
+        }).bounds(x + 15, y + 190, W - 30, 20).build();
+
+        addRenderableWidget(digestButton);
         addRenderableWidget(bellyButton);
         addRenderableWidget(cpmButton);
         addRenderableWidget(actionButton);
